@@ -11,7 +11,11 @@ export declare class FlowKeys {
     private static STANDARD_KEY_MAP;
     constructor(target?: HTMLElement | Document | Window);
     addAlias(key: Key, aliases: Key[]): void;
-    register(sequence: (Key | Key[])[], callback: CommandCallback): void;
+    register(sequence: (Key | Key[])[], callback: CommandCallback, options?: {
+        once?: boolean;
+        stopOthers?: boolean;
+    }): void;
+    unregister(sequence: (Key | Key[])[]): void;
     private normalizeCombo;
     private static setToKey;
     private handleKeyDown;

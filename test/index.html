@@ -21,7 +21,7 @@
 		fk.register(
 			["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"],
 			() => {
-				const ret = "コナミコマンド成功！";
+				const ret = "コナミコマンド";
 				console.log(ret);
 				addLog(ret);
 			}
@@ -30,18 +30,48 @@
 		// 同時押し例
 		fk.register(
 			[
-				["Control", "Shift", "k"], "m"
+				["Control", "Shift", "K"], "M"
 			],
 			() => {
-			const ret = "Ctrl+Shift+K → M 成功！";
+				const ret = "Ctrl+Shift+K → M";
 				console.log(ret);
 				addLog(ret);
 			}
+		);
+		// 同時押し例2
+		fk.register(
+		[
+			["Control", "Shift", "K"], ["Control", "Shift", "L"], "J"
+		],
+		() => {
+			const ret = "Ctrl+Shift+K → Ctrl+Shift+L → J";
+			console.log(ret);
+			addLog(ret);
+		}
 		);
 
 		fk.register(["Return"], () => {
 			console.log("Enter または Return OK！");
 		});
+
+		fk.register(["A", "B", "C", "D"], () => {
+			const ret = "ABCD";
+			console.log(ret);
+			addLog(ret);
+		});
+
+		fk.register(["A", "B", "C", "D", "E"], () => {
+			const ret = "ABCDE";
+			console.log(ret);
+			addLog(ret);
+		});
+		fk.unregister(["A", "B", "C", "D"]);
+
+		fk.register(["A", "P", "P", "L", "E"], () => {
+			const ret = "Apple";
+			console.log(ret);
+			addLog(ret);
+		}, {once: true});
 	</script>
 </head>
 <body>
@@ -50,6 +80,10 @@
 	<ul>
 		<li>↑↑↓↓←→←→BA</li>
 		<li>Ctrl+Shift+K M</li>
+		<li>Ctrl+Shift+K Ctrl+Shift+L J</li>
+		<li>ABCD (delete)</li>
+		<li>ABCDE</li>
+		<li>APPLE (once)</li>
 	</ul>
 	<br />
 	<ul id="log"></ul>

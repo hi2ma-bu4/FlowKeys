@@ -36,7 +36,7 @@ var FlowKeys = class _FlowKeys {
     );
   }
   // シーケンス登録
-  register(sequence, callback) {
+  register(sequence, callback, options) {
     if (!sequence.length) return;
     this.maxSequenceLength = Math.max(this.maxSequenceLength, sequence.length);
     let node = this.root;
@@ -47,6 +47,30 @@ var FlowKeys = class _FlowKeys {
       node = node.children.get(key);
     }
     node.callback = callback;
+    node.options = options;
+  }
+  unregister(sequence) {
+    if (!sequence.length) return;
+    const path = [];
+    let node = this.root;
+    for (const item of sequence) {
+      const combo = new Set(Array.isArray(item) ? item : [item]);
+      const key = _FlowKeys.setToKey(this.normalizeCombo(combo));
+      if (!node.children.has(key)) return;
+      node = node.children.get(key);
+      path.push(node);
+    }
+    if (node) {
+      node.callback = void 0;
+      node.options = void 0;
+    }
+    for (let i = path.length - 1; i >= 0; i--) {
+      const parent = i > 0 ? path[i - 1] : this.root;
+      const key = Array.from(path[i].children.keys())[0];
+      if (path[i].callback === void 0 && path[i].children.size === 0) {
+        parent.children.delete(key);
+      }
+    }
   }
   normalizeCombo(combo) {
     const normalized = /* @__PURE__ */ new Set();
@@ -86,7 +110,9 @@ var FlowKeys = class _FlowKeys {
   }
   checkBuffer() {
     if (!this.buffer.length) return;
+    const stopFlags = [];
     for (let start = 0; start < this.buffer.length; start++) {
+      if (stopFlags[start]) continue;
       let node = this.root;
       let matched = true;
       for (let i = start; i < this.buffer.length; i++) {
@@ -97,7 +123,16 @@ var FlowKeys = class _FlowKeys {
         }
         node = node.children.get(keyStr);
       }
-      if (matched && node.callback) node.callback();
+      if (matched && node.callback) {
+        node.callback();
+        if (node.options?.once) {
+          node.callback = void 0;
+          node.options = void 0;
+        }
+        if (node.options?.stopOthers) {
+          for (let j = start + 1; j < this.buffer.length; j++) stopFlags[j] = true;
+        }
+      }
     }
   }
   destroy() {

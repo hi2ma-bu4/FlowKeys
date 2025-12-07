@@ -5,6 +5,7 @@ type KeyCombo = Set<Key>;
 interface TrieNode {
 	children: Map<string, TrieNode>;
 	callback?: CommandCallback;
+	options?: { once?: boolean; stopOthers?: boolean };
 }
 
 export class FlowKeys {
@@ -48,7 +49,7 @@ export class FlowKeys {
 	}
 
 	// シーケンス登録
-	public register(sequence: (Key | Key[])[], callback: CommandCallback) {
+	public register(sequence: (Key | Key[])[], callback: CommandCallback, options?: { once?: boolean; stopOthers?: boolean }) {
 		if (!sequence.length) return;
 		this.maxSequenceLength = Math.max(this.maxSequenceLength, sequence.length);
 
@@ -60,6 +61,35 @@ export class FlowKeys {
 			node = node.children.get(key)!;
 		}
 		node.callback = callback;
+		node.options = options;
+	}
+
+	public unregister(sequence: (Key | Key[])[]) {
+		if (!sequence.length) return;
+
+		const path: TrieNode[] = [];
+		let node: TrieNode | undefined = this.root;
+
+		for (const item of sequence) {
+			const combo = new Set(Array.isArray(item) ? item : [item]);
+			const key = FlowKeys.setToKey(this.normalizeCombo(combo));
+			if (!node.children.has(key)) return; // 登録なし
+			node = node.children.get(key)!;
+			path.push(node);
+		}
+
+		// コールバックを削除
+		if (node) {
+			node.callback = undefined;
+			node.options = undefined;
+		}
+		for (let i = path.length - 1; i >= 0; i--) {
+			const parent = i > 0 ? path[i - 1] : this.root;
+			const key = Array.from(path[i].children.keys())[0]; // children が空なら削除
+			if (path[i].callback === undefined && path[i].children.size === 0) {
+				parent.children.delete(key);
+			}
+		}
 	}
 
 	private normalizeCombo(combo: KeyCombo): KeyCombo {
@@ -108,7 +138,10 @@ export class FlowKeys {
 
 	private checkBuffer() {
 		if (!this.buffer.length) return;
+
+		const stopFlags: boolean[] = [];
 		for (let start = 0; start < this.buffer.length; start++) {
+			if (stopFlags[start]) continue;
 			let node: TrieNode = this.root;
 			let matched = true;
 			for (let i = start; i < this.buffer.length; i++) {
@@ -119,7 +152,16 @@ export class FlowKeys {
 				}
 				node = node.children.get(keyStr)!;
 			}
-			if (matched && node.callback) node.callback();
+			if (matched && node.callback) {
+				node.callback();
+				if (node.options?.once) {
+					node.callback = undefined;
+					node.options = undefined;
+				}
+				if (node.options?.stopOthers) {
+					for (let j = start + 1; j < this.buffer.length; j++) stopFlags[j] = true;
+				}
+			}
 		}
 	}
 
