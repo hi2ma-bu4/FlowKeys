@@ -117,7 +117,7 @@ jobs:
                   body: ""
                   draft: false
                   prerelease: false
-                  files: types/FlowKeys.d.ts
+                  files: dist/FlowKeys.d.ts
 
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
