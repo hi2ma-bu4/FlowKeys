@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>FlowKeys</title>
+
+	<script type="module">
+		import { FlowKeys } from "../dist/FlowKeys.js"
+		const fk = new FlowKeys(window);
+
+		function addLog(text) {
+			const li = document.createElement("li");
+			li.textContent = text;
+			document.getElementById("log").appendChild(li);
+		}
+
+		fk.addAlias("Return", ["Enter"]);
+
+		// コナミコマンド登録
+		fk.register(
+			["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"],
+			() => {
+				const ret = "コナミコマンド成功！";
+				console.log(ret);
+				addLog(ret);
+			}
+		);
+
+		// 同時押し例
+		fk.register(
+			[
+				["Control", "Shift", "k"], "m"
+			],
+			() => {
+			const ret = "Ctrl+Shift+K → M 成功！";
+				console.log(ret);
+				addLog(ret);
+			}
+		);
+
+		fk.register(["Return"], () => {
+			console.log("Enter または Return OK！");
+		});
+	</script>
+</head>
+<body>
+	<h3>FlowKeys</h3>
+	<p>コマンドを入力してみてください。</p>
+	<ul>
+		<li>↑↑↓↓←→←→BA</li>
+		<li>Ctrl+Shift+K M</li>
+	</ul>
+	<br />
+	<ul id="log"></ul>
+</body>
+</html>
