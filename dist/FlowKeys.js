@@ -4,23 +4,22 @@ var FlowKeys = class _FlowKeys {
   buffer = [];
   maxSequenceLength = 0;
   pressedKeys = /* @__PURE__ */ new Set();
+  isLastKeyDown = false;
   aliasMap = /* @__PURE__ */ new Map();
   target;
-  keyPushTimeout = 30;
-  keyPushTimer = null;
   // 標準化マップ（OS/ブラウザ差異の吸収）
   static STANDARD_KEY_MAP = {
-    Esc: "Escape",
-    Del: "Delete",
-    Return: "Enter",
-    Left: "ArrowLeft",
-    Right: "ArrowRight",
-    Up: "ArrowUp",
-    Down: "ArrowDown",
-    " ": "Space",
-    Ctrl: "Control",
-    Cmd: "Meta",
-    Windows: "Meta"
+    esc: "escape",
+    del: "delete",
+    return: "enter",
+    left: "arrowleft",
+    right: "arrowright",
+    up: "arrowup",
+    down: "arrowdown",
+    " ": "space",
+    ctrl: "control",
+    cmd: "meta",
+    windows: "meta"
   };
   constructor(target) {
     this.target = target ?? window;
@@ -70,52 +69,44 @@ var FlowKeys = class _FlowKeys {
   }
   handleKeyDown(event) {
     const key = (_FlowKeys.STANDARD_KEY_MAP[event.key] ?? event.key).toLowerCase();
-    const now = performance.now();
+    if (this.pressedKeys.has(key)) return;
     this.pressedKeys.add(key);
-    if (this.keyPushTimer !== null) clearTimeout(this.keyPushTimer);
-    this.keyPushTimer = window.setTimeout(() => {
-      this.updateBuffer();
-      this.keyPushTimer = null;
-    }, this.keyPushTimeout);
+    this.isLastKeyDown = true;
   }
   handleKeyUp(event) {
     const key = (_FlowKeys.STANDARD_KEY_MAP[event.key] ?? event.key).toLowerCase();
+    if (this.pressedKeys.has(key) && this.isLastKeyDown) {
+      this.isLastKeyDown = false;
+      const comboCopy = new Set(this.pressedKeys);
+      this.buffer.push(this.normalizeCombo(comboCopy));
+      if (this.buffer.length > this.maxSequenceLength) this.buffer.shift();
+      this.checkBuffer();
+    }
     this.pressedKeys.delete(key);
-  }
-  updateBuffer() {
-    const comboKey = this.normalizeCombo(this.pressedKeys);
-    this.buffer.push(comboKey);
-    if (this.buffer.length > this.maxSequenceLength) this.buffer.shift();
-    this.checkBuffer();
   }
   checkBuffer() {
     if (!this.buffer.length) return;
-    console.log(this.buffer);
-    let node = this.root;
-    for (let i = this.buffer.length - this.maxSequenceLength; i < this.buffer.length; i++) {
-      if (i < 0) continue;
-      node = this.root;
-      let match = true;
-      for (let j = i; j < this.buffer.length; j++) {
-        const keyStr = _FlowKeys.setToKey(this.buffer[j]);
+    for (let start = 0; start < this.buffer.length; start++) {
+      let node = this.root;
+      let matched = true;
+      for (let i = start; i < this.buffer.length; i++) {
+        const keyStr = _FlowKeys.setToKey(this.buffer[i]);
         if (!node.children.has(keyStr)) {
-          match = false;
+          matched = false;
           break;
         }
         node = node.children.get(keyStr);
       }
-      if (match && node.callback) {
-        node.callback();
-      }
+      if (matched && node.callback) node.callback();
     }
   }
   destroy() {
     this.target.removeEventListener("keydown", this.handleKeyDown, true);
     this.target.removeEventListener("keyup", this.handleKeyUp, true);
-    if (this.keyPushTimer !== null) clearTimeout(this.keyPushTimer);
     this.buffer = [];
     this.root = { children: /* @__PURE__ */ new Map() };
     this.pressedKeys.clear();
+    this.isLastKeyDown = false;
     this.aliasMap.clear();
     this.maxSequenceLength = 0;
   }

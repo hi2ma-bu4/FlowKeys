@@ -5,10 +5,9 @@ export declare class FlowKeys {
     private buffer;
     private maxSequenceLength;
     private pressedKeys;
+    private isLastKeyDown;
     private aliasMap;
     private target;
-    private keyPushTimeout;
-    private keyPushTimer;
     private static STANDARD_KEY_MAP;
     constructor(target?: HTMLElement | Document | Window);
     addAlias(key: Key, aliases: Key[]): void;
@@ -17,7 +16,6 @@ export declare class FlowKeys {
     private static setToKey;
     private handleKeyDown;
     private handleKeyUp;
-    private updateBuffer;
     private checkBuffer;
     destroy(): void;
 }
